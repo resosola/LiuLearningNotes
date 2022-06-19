@@ -23,19 +23,21 @@
 
   * FixedUpdate()函数：**固定每0.02s执行一次**，**与fps无关**，所以不同机型运行起来没区别。
 
-  * 生命周期：![image-20220617215908785](C:\Users\Liu\Desktop\info\LiuLearningNotes\游戏开发相关\Unity.assets\image-20220617215908785.png)
+  * 生命周期：
 
-    ![image-20220617220016205](C:\Users\Liu\Desktop\info\LiuLearningNotes\游戏开发相关\Unity.assets\image-20220617220016205.png)![image-20220617220036398](C:\Users\Liu\Desktop\info\LiuLearningNotes\游戏开发相关\Unity.assets\image-20220617220036398.png)
+    ![image-20220617215908785](../../img/image-20220617215908785.png)
+
+    ![image-20220617220016205](../../img/image-20220617220016205.png)![image-20220617220036398](../../img/image-20220617220036398.png)
 
   * 注意代码的编写逻辑，逻辑错误可能原本的动画替换掉
 
-  * 协程：![image-20220617221349590](C:\Users\Liu\Desktop\info\LiuLearningNotes\游戏开发相关\Unity.assets\image-20220617221349590.png)
+  * 协程：![image-20220617221349590](../../img/image-20220617221349590.png)
 
 * 面板
 
   * Inspector：显示当前选择的游戏对象、脚本或资产【图片和各种组件等】的属性。
-    * 锁定Inspector![image-20220427222937828](D:\Typora\typora-user-images\img\img\image-20220427222937828.png)
-    * 图片Insepector![image-20220427224045905](D:\Typora\typora-user-images\img\img\image-20220427224045905.png)
+    * 锁定Inspector![image-20220427222937828](../../img/image-20220427222937828.png)
+    * 图片Insepector![image-20220427224045905](../../img/image-20220427224045905.png)
 
 * 主相机
 
@@ -70,7 +72,7 @@
   * point Light：点光
     * Intensity：光强
 
-  * 光效都是3d的，可调整光源位置![image-20220426154234656](D:\Typora\typora-user-images\img\img\image-20220426154234656.png)
+  * 光效都是3d的，可调整光源位置![image-20220426154234656](../../img/image-20220426154234656.png)
 
 
 * 父子物体：
@@ -118,5 +120,4 @@
   * AssetBundle
   * Unity 如何识别和序列化数据
     * Asset 和 UnityEngine.Object 之间的区别
-
 
