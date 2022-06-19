@@ -15,21 +15,21 @@
 
   * 表示相对于空间原点的位置
 
-  * 二维和三维向量的原理相同，三维延伸出z轴，z轴代表深度。![image-20220513142043976](D:\Typora\typora-user-images\img\img\image-20220513142043976.png)
+  * 二维和三维向量的原理相同，三维延伸出z轴，z轴代表深度。![image-20220513142043976](../../img/image-20220513142043976.png)
 
-  * unity采用左手坐标系：![image-20220513142139882](D:\Typora\typora-user-images\img\img\image-20220513142139882.png)
+  * unity采用左手坐标系：![image-20220513142139882](../../img/image-20220513142139882.png)
 
-    ![image-20220513142313255](D:\Typora\typora-user-images\img\img\image-20220513142313255.png)
+    ![image-20220513142313255](../../img/image-20220513142313255.png)
 
   * 为了简化三维向量的运算，引入了Vector3.magnitude，如获取两个向量的点积已判断是否垂直。Vector3.Dot(VectorA, VectorB)函数用于求点积。
 
     * 叉积：获取两个向量的叉积，叉积垂直于两个向量所在平面
 
-    * ![image-20220513143025892](D:\Typora\typora-user-images\img\img\image-20220513143025892.png)
+    * ![image-20220513143025892](../../img/image-20220513143025892.png)
 
     * 具体运算过程：
 
-      ![image-20220513143202733](D:\Typora\typora-user-images\img\img\image-20220513143202733.png)
+      ![image-20220513143202733](../../img/image-20220513143202733.png)
 
       对应函数：Vector3.Cross(Vector A, Vector B);
 
@@ -40,8 +40,8 @@
 * 通过脚本在场景中激活或停用对象
 
   * gameObject.setActive(true/false)，
-  * 父对象停用对应子对象也会停用，但子对像在Inspector中保持着活跃状态。【要再次激活子对象，需先激活父对象】![image-20220513144148753](D:\Typora\typora-user-images\img\img\image-20220513144148753.png)
-  * Inspector中对象的状态：![image-20220513143918540](D:\Typora\typora-user-images\img\img\image-20220513143918540.png)
+  * 父对象停用对应子对象也会停用，但子对像在Inspector中保持着活跃状态。【要再次激活子对象，需先激活父对象】![image-20220513144148753](../../img/image-20220513144148753.png)
+  * Inspector中对象的状态：![image-20220513143918540](../../img/image-20220513143918540.png)
   * 要确认对象在场景和在Inspector中是否为活跃状态，可使用gameObject的activeSelf和activeInHierarchy属性查询
 
 * Translate和Rotate
@@ -49,11 +49,11 @@
   * 两个用来更改游戏对象的位置和旋转的函数
   * Translate：
     * Translate函数接收一个Vector3类型的参数，表示
-    * ![image-20220513145111045](D:\Typora\typora-user-images\img\img\image-20220513145111045.png)
+    * ![image-20220513145111045](../../img/image-20220513145111045.png)
     * Vector3.forward即(0,0,1)，此处表示按每秒多少米移动。
   * Rotate：
     * 接收两个参数，一个表示围绕哪个轴旋转，另一个表示旋转量。
-    * ![image-20220513145742171](D:\Typora\typora-user-images\img\img\image-20220513145742171.png)
+    * ![image-20220513145742171](../../img/image-20220513145742171.png)
     * Vector3.up即(1,0,0)
 
   * 注意
@@ -62,23 +62,23 @@
 
 * LookAt
 
-  * 该函数让游戏对象朝向另一个transform![image-20220513150537956](D:\Typora\typora-user-images\img\img\image-20220513150537956.png)
+  * 该函数让游戏对象朝向另一个transform![image-20220513150537956](../../img/image-20220513150537956.png)
   * 在界面切换Global和Local，切换至Local可看到游戏对象的朝向位置【z轴正方向】。
 
 * Destroy
 
   * 可用于在运行时移除游戏对象或从游戏对象移除组件，也可延时执行【只需提供第二个浮点类型的参数】
-  * ![image-20220513151511808](D:\Typora\typora-user-images\img\img\image-20220513151511808.png)
+  * ![image-20220513151511808](../../img/image-20220513151511808.png)
 
 * GetButtion和GetKey
 
   * Input类中用于接收通过按键或操纵杆的输入
 
-    ![image-20220513153217903](D:\Typora\typora-user-images\img\img\image-20220513153217903.png)![image-20220513153237969](D:\Typora\typora-user-images\img\img\image-20220513153237969.png)
+    ![image-20220513153217903](../../img/image-20220513153217903.png)![image-20220513153237969](../../img/image-20220513153237969.png)
 
-  * GetKey会使用KeyCode明确指定按键名称【KeyCode.Space等，Key至于特定键相关】，GetButton则需要指定所设定的输入名，Input management中即允许指定输入名称并指定按键或按钮![image-20220513152711326](D:\Typora\typora-user-images\img\img\image-20220513152711326.png)
+  * GetKey会使用KeyCode明确指定按键名称【KeyCode.Space等，Key至于特定键相关】，GetButton则需要指定所设定的输入名，Input management中即允许指定输入名称并指定按键或按钮![image-20220513152711326](../../img/image-20220513152711326.png)
 
-  * GetButton和GetKey都有三种状态函数![image-20220513152841525](D:\Typora\typora-user-images\img\img\image-20220513152841525.png)
+  * GetButton和GetKey都有三种状态函数![image-20220513152841525](../../img/image-20220513152841525.png)
 
     getButtonDown：按下的那一帧返回true
 
@@ -90,22 +90,22 @@
 
   * 类系GetButton和GetKey，但只返回-1到1之间的浮点值，设置Axis通用在Input管理器中设置
   * axis相当于一个方向上的滑尺，我们可让对象在这个方向上滑动
-  * ![image-20220513155814750](D:\Typora\typora-user-images\img\img\image-20220513155814750.png)
+  * ![image-20220513155814750](../../img/image-20220513155814750.png)
     * gravity：按钮松开后归零的速度，越高归零越快
     * sensivitity：与gravity相反，控制输入的返回值到达1或-1的速度有多块，越大越快，越小移动越流畅。
     * Dead：盲区，常用于避免收到摇杆轻微移动的作用。盲区越大，摇杆需要的摆动幅度越大，才能样GetAxis返回非0值
     * Snap：允许同时按下正负按钮时归零
 
-  * ![image-20220513155902653](D:\Typora\typora-user-images\img\img\image-20220513155902653.png)
+  * ![image-20220513155902653](../../img/image-20220513155902653.png)
   * 也可使用Input.GetAxisRaw来获取1或-1;
 
 * OnMouseDown：
 
-  * 脚本绑定的对象被点击时，该函数将被回调。![image-20220513160425633](D:\Typora\typora-user-images\img\img\image-20220513160425633.png)
+  * 脚本绑定的对象被点击时，该函数将被回调。![image-20220513160425633](../../img/image-20220513160425633.png)
 
 * GetComponent
 
-  * 脚本中用于访问其他组件的函数，该函数会返回**对应游戏对象中指定类型组件的引用**。![image-20220513161453399](D:\Typora\typora-user-images\img\img\image-20220513161453399.png)
+  * 脚本中用于访问其他组件的函数，该函数会返回**对应游戏对象中指定类型组件的引用**。![image-20220513161453399](../../img/image-20220513161453399.png)
   * 可用于其他对象未公开的组件。
   * 该函数占用大量处理时间，应减少调用，一般在Awake和Start函数调用，或仅在首次需要时调用一次。
   
@@ -128,7 +128,7 @@
 
   * 分为值类型和引用类型两大类
 
-    ![image-20220513181327006](D:\Typora\typora-user-images\img\img\image-20220513181327006.png)
+    ![image-20220513181327006](../../img/image-20220513181327006.png)
 
 
 * 类：
@@ -139,13 +139,13 @@
 
   * 该函数用于克隆游戏对象，常用于克隆prefab【保存在项目素材中的预配置对象】
   * Instantiate(gameObject)：克隆游戏对象，初始位置为0，默认返回Object类型
-  * Instantiate(gameObject, position, rotation)：指定初始位置和旋转![image-20220513183403079](D:\Typora\typora-user-images\img\img\image-20220513183403079.png)
+  * Instantiate(gameObject, position, rotation)：指定初始位置和旋转![image-20220513183403079](../../img/image-20220513183403079.png)
 
 * 数组：
 
-  * 脚本中公开的数组变量，可在Inspector中看到，并可为其分配值。![image-20220513183841383](D:\Typora\typora-user-images\img\img\image-20220513183841383.png)
+  * 脚本中公开的数组变量，可在Inspector中看到，并可为其分配值。![image-20220513183841383](../../img/image-20220513183841383.png)
 
-  * ![image-20220513184111473](D:\Typora\typora-user-images\img\img\image-20220513184111473.png)
+  * ![image-20220513184111473](../../img/image-20220513184111473.png)
 
     FindGameObjectsWithTag(String tag)：返回相应标签的游戏对象数组。
 
@@ -155,24 +155,24 @@
   
   * Invoke(String methodName, int delay)：延时以秒为单位。
   
-    ![image-20220513192803157](D:\Typora\typora-user-images\img\img\image-20220513192803157.png)
+    ![image-20220513192803157](../../img/image-20220513192803157.png)
   
   * InvokeRepeating(String methodName, int delay, int schedule)：delay秒后执行方法，之后每隔schedule秒执行方法。
   
   * CancelInvoke("String methodName")：暂停对应方法重复执行。
   
-  * ![image-20220513192956350](D:\Typora\typora-user-images\img\img\image-20220513192956350.png)
+  * ![image-20220513192956350](../../img/image-20220513192956350.png)
   
 * 枚举：
 
 
   * 用于定义一组有特殊意义的常量，每个都有一个整数值，默认从0递增。
 
-    ![image-20220513193448177](D:\Typora\typora-user-images\img\img\image-20220513193448177.png)
+    ![image-20220513193448177](../../img/image-20220513193448177.png)
 
-  * 常量可以更改为任意整数类型，如下，枚举类型为short，而非int![image-20220513193554718](D:\Typora\typora-user-images\img\img\image-20220513193554718.png)
+  * 常量可以更改为任意整数类型，如下，枚举类型为short，而非int![image-20220513193554718](../../img/image-20220513193554718.png)
 
-    ![image-20220513193758638](D:\Typora\typora-user-images\img\img\image-20220513193758638.png)
+    ![image-20220513193758638](../../img/image-20220513193758638.png)
 
 
 * 属性：
@@ -196,7 +196,7 @@
     }
     ```
 
-  * 后续可以通过访问属性代替字段的访问了：![image-20220513200433296](D:\Typora\typora-user-images\img\img\image-20220513200433296.png)
+  * 后续可以通过访问属性代替字段的访问了：![image-20220513200433296](../../img/image-20220513200433296.png)
 
 * 三元运算符
 
@@ -212,8 +212,8 @@
 
 * 重载
 
-  * 同一类下，方法名相同，方法签名不同【方法签名：方法名和参数列表组成】![image-20220513201440255](D:\Typora\typora-user-images\img\img\image-20220513201440255.png)
-  * 系统尝试确定要运行的正确的重载方法时可能会出现三种情况![image-20220513201809845](D:\Typora\typora-user-images\img\img\image-20220513201809845.png)
+  * 同一类下，方法名相同，方法签名不同【方法签名：方法名和参数列表组成】![image-20220513201440255](../../img/image-20220513201440255.png)
+  * 系统尝试确定要运行的正确的重载方法时可能会出现三种情况![image-20220513201809845](../../img/image-20220513201809845.png)
     * 传入参数完全匹配，直接调用
     * 非完全匹配，找出所有可能的匹配方法，选择一个需要最少转换量的方法
     * 没有匹配方法或多个方法的所需转换量相同，抛出错误。
@@ -224,57 +224,57 @@
 
     * 例：
 
-      ![image-20220513202839672](D:\Typora\typora-user-images\img\img\image-20220513202839672.png)![image-20220513203418585](D:\Typora\typora-user-images\img\img\image-20220513203418585.png)
+      ![image-20220513202839672](../../img/image-20220513202839672.png)![image-20220513203418585](../../img/image-20220513203418585.png)
 
-      通过对泛型参数施加限制来限制类型![image-20220513203315343](D:\Typora\typora-user-images\img\img\image-20220513203315343.png)
+      通过对泛型参数施加限制来限制类型![image-20220513203315343](../../img/image-20220513203315343.png)
 
   * 泛型类：
 
-    ![image-20220513203506808](D:\Typora\typora-user-images\img\img\image-20220513203506808.png)
+    ![image-20220513203506808](../../img/image-20220513203506808.png)
 
 * 继承
 
   * 继承后，派生类获得基类的特征【成员变量、方法】。
 
-  * 访问修饰符【public、protected、private】对继承的影响![image-20220513204145194](D:\Typora\typora-user-images\img\img\image-20220513204145194.png)
+  * 访问修饰符【public、protected、private】对继承的影响![image-20220513204145194](../../img/image-20220513204145194.png)
 
   * 子类构造函数显示调用父类构造函数
 
-    ![image-20220513204458123](D:\Typora\typora-user-images\img\img\image-20220513204458123.png)
+    ![image-20220513204458123](../../img/image-20220513204458123.png)
 
     base关键字也可用来访问父类成员
 
 * 多态：
 
-  * 父类引用指向子类对象【向上转型】![image-20220513212853791](D:\Typora\typora-user-images\img\img\image-20220513212853791.png)
+  * 父类引用指向子类对象【向上转型】![image-20220513212853791](../../img/image-20220513212853791.png)
 
 * 成员隐藏
   * **派生类从基类继承而来的成员在派生类中重新声明的过程**即成员隐藏。
   
   * 如下：
   
-    ![image-20220514000109657](D:\Typora\typora-user-images\img\img\image-20220514000109657.png)
+    ![image-20220514000109657](../../img/image-20220514000109657.png)
   
     **向上转型时**后续调用SomeValue和SayHello()将**调用的是父类的成员。**【作用与覆盖相反】
   
 * 覆盖：
 
 
-  * 子类覆盖了父类的方法，向上转型使用时将直接调用子类的方法。![image-20220514000749528](D:\Typora\typora-user-images\img\img\image-20220514000749528.png)
+  * 子类覆盖了父类的方法，向上转型使用时将直接调用子类的方法。![image-20220514000749528](../../img/image-20220514000749528.png)
 
-    ![image-20220514000848153](D:\Typora\typora-user-images\img\img\image-20220514000848153.png)
+    ![image-20220514000848153](../../img/image-20220514000848153.png)
 
-    ![image-20220514003345895](D:\Typora\typora-user-images\img\img\image-20220514003345895.png)
+    ![image-20220514003345895](../../img/image-20220514003345895.png)
 
 * 接口
 
   * 接口对外定义了一组功能，接口不能实例化 。
 
-  * 接口声明：![image-20220514091158630](D:\Typora\typora-user-images\img\img\image-20220514091158630.png)
+  * 接口声明：![image-20220514091158630](../../img/image-20220514091158630.png)
 
   * 实现接口：
 
-    ![image-20220514091412374](D:\Typora\typora-user-images\img\img\image-20220514091412374.png)
+    ![image-20220514091412374](../../img/image-20220514091412374.png)
 
   * 既然有继承了，为啥需要接口
 
@@ -289,9 +289,9 @@
 
   * 声明：this关键字后声明的参数即为对应调用对象
 
-    ![image-20220514092958163](D:\Typora\typora-user-images\img\img\image-20220514092958163.png)
+    ![image-20220514092958163](../../img/image-20220514092958163.png)
 
-    使用：![image-20220514093135763](D:\Typora\typora-user-images\img\img\image-20220514093135763.png)
+    使用：![image-20220514093135763](../../img/image-20220514093135763.png)
 
 * 命名空间【Namespaces】
 
@@ -300,12 +300,12 @@
   * 使用命名空间：命名空间内的内容都可在当前脚本使用
 
     * using 命名空间名
-    * 使用点运算符：命名空间名.Xxx![image-20220514093950068](D:\Typora\typora-user-images\img\img\image-20220514093950068.png)
-    * 将编写的类放入需要访问的命名空间中![image-20220514094049324](D:\Typora\typora-user-images\img\img\image-20220514094049324.png)
+    * 使用点运算符：命名空间名.Xxx![image-20220514093950068](../../img/image-20220514093950068.png)
+    * 将编写的类放入需要访问的命名空间中![image-20220514094049324](../../img/image-20220514094049324.png)
 
   * 声明命名空间【命名空间可嵌套】：
 
-    ![image-20220514093856202](D:\Typora\typora-user-images\img\img\image-20220514093856202.png)
+    ![image-20220514093856202](../../img/image-20220514093856202.png)
 
 * 列表和字典
 
@@ -313,21 +313,21 @@
 
   * list：常用于替代需要更多灵活性或功能的数组。
 
-    例：![image-20220514094919396](D:\Typora\typora-user-images\img\img\image-20220514094919396.png)
+    例：![image-20220514094919396](../../img/image-20220514094919396.png)
 
-    ![image-20220514095005275](D:\Typora\typora-user-images\img\img\image-20220514095005275.png)
+    ![image-20220514095005275](../../img/image-20220514095005275.png)
 
   * 字典：通过键访问值
 
-    例：![image-20220514095446513](D:\Typora\typora-user-images\img\img\image-20220514095446513.png)
+    例：![image-20220514095446513](../../img/image-20220514095446513.png)
 
 * 协程：
 
-  * 即协同程序：按时间间隔执行的函数![image-20220514103004576](D:\Typora\typora-user-images\img\img\image-20220514103004576.png)
+  * 即协同程序：按时间间隔执行的函数![image-20220514103004576](../../img/image-20220514103004576.png)
 
   * 优势：用来**与属性结合时**发挥作用
 
-    ![image-20220514103454611](D:\Typora\typora-user-images\img\img\image-20220514103454611.png)
+    ![image-20220514103454611](../../img/image-20220514103454611.png)
 
 * Shader、屏幕后处理、SceneManager、Time.scaleTime
 
