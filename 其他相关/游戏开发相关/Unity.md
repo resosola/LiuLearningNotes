@@ -29,7 +29,7 @@
 
     ![img](../../img/webp.webp)![img](../../img/webp-16556428807492.webp)![img](../../img/webp-16556428897654.webp)
 
-    Reset->Awake->OnEnable->Start->FixUpdate->Update->LateUpdate->OnGUI->ONDisable->OnDestroy
+    Reset->Awake->OnEnable->Start->FixUpdate->Update->LateUpdate->OnGUI->OnDisable->OnDestroy
 
     Reset : 用户第一次添加组件时或用户点击见组件面板上的Reset按钮时调用
 
@@ -133,47 +133,43 @@
 
   更详细的文章：[【Unity】Asset简介 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/411946807)![image-20220617221626414](Unity.assets/image-20220617221626414.png)
 
+* 编辑模式
 
-    * 编辑模式
-    
-      * 资源
-        * 引擎可识别的资源，如Prefab、声音、视频、动画和UI等。
-        * 引擎不可识别的资源，需要将信息解析出来并组织成引擎内可识别资源。
-    
-      * 编辑模式下**负责读取工程内资源的标志类**：**AssetsDatabase**。【需要保证所有资源放在Assets目录下，否则无法读取。】
-    
-      * 卸载资源：![image-20220617222116276](Unity.assets/image-20220617222116276.png)
-    
-      * 游戏对象与资源的关系：
-    
-        游戏对象与资源是一种引用关系![image-20220617222226145](Unity.assets/image-20220617222226145.png)![image-20220617222257655](Unity.assets/image-20220617222257655.png)
+  * 资源
+    * 引擎可识别的资源，如Prefab、声音、视频、动画和UI等。
+    * 引擎不可识别的资源，需要将信息解析出来并组织成引擎内可识别资源。
 
+  * 编辑模式下**负责读取工程内资源的标志类**：**AssetsDatabase**。【需要保证所有资源放在Assets目录下，否则无法读取。】
 
+  * 卸载资源：![image-20220617222116276](../../img/image-20220617222116276-16556890393333.png)
 
-    * 运行模式：![image-20220617222343707](Unity.assets/image-20220617222343707.png)
-    
-      * 引用资源：打包时只有被引用到的资源Unity才会打包，常见的是场景中的资源。
-    
-      * Resources：![image-20220617222534385](Unity.assets/image-20220617222534385.png)![image-20220617222705079](Unity.assets/image-20220617222705079.png)
-    
-        一般使用Resources.Load< T >来加载资源![image-20220619170150544](../../img/image-20220619170150544.png)
-    
-        **`Resources`这种动态加载方式是只读的，在游戏打包后，就无法对文件夹的内容进行修改**
-    
-        * 删除资源
-          * **游戏对象删除了，它引用的资源其实并没有删除。**  
-          * 使用Resources.UnloadAsset() 以及Resources.UnloadUnusedAssets() 方法强制
-            卸载资源。由于**卸载资源是异步操作**，所以可以使用isDone 来判断是否完成。  
-    
-        尽量不要使用Resources来进行资源加载，因为打包后可能会包体过大，**构建的应用启动时间过长，内存管理也更困难**。对于移动平台或需要**热更新的场景下极不友好**（无法进行增量更新 incremental content upgrades ），同时这种**依赖资源名的调用方式**很容易在替换资源时出现问题。
+  * 游戏对象与资源的关系：
 
+    游戏对象与资源是一种引用关系![image-20220617222226145](../../img/image-20220617222226145-16556890393332.png)![image-20220617222257655](../../img/image-20220617222257655-16556890393321.png)
 
-        * AssetBundle：与`Resources`不同，`AssetBundle`主要是用于**热更新**，要用AssetBundle 首先要**把资源打包成.assetbundle文件，再动态的去加载这个文件**，本地或者网络服务器都可以。
-    
-          * 组成：AssetBundle 由**头文件（ Header ）和数据段（ Data Segment ）组成**，数据段中**包含着所有资源对象**，而头文件中包含了 AssetBundle 的信息，此 AB 包的标识符（ Identifier ），压缩类型（ Compression Type，是否压缩，LZMA - 全包压缩，LZ4 - 单独压缩）以及数据清单（ Manifest，对象名作为 key 用来查找数据段位置）。
-          * 工作流程：先将资源按照一定的方式**打包成多个 AssetBundle**（ BuildPipline.BuildAssetBundles 方法 ），然后将这些**二进制文件放到 StreamingAssets 目录**下（ 类似 Resources，但构建时不会进行打包的处理 ），在**运行时加载需要的 AssetBundle**（ 4 个 API，最快最好的是 AsseBundle.LoadFromFile ），之后**使用 AssetBundle 中的资源对象**（ 3 种 6个 API，LoadAllAssets 最快，LoadAsset，LoadAssetsWithSubAssets ）。
-          * 卸载：对于 AssetBundle 的卸载需要有一定的讲究，因为两种卸载方式各有各的好处（坑？），卸载 AssetBundle 使用 API AssetBundle.Unload(bool)，**参数表示是否卸载从此 AB 包中加载的资源对象实例**。true 时，会立即卸载实例化的所有对象，造成的问题是如果场景中依然有对象对这些卸载了的资源的对象进行访问会出现 missing 的情况（确保不会再使用，比如场景切换时）；false 时，会在下次加载同样的 AB 包时，造成同样的资源对象重复的情况，因为先前加载的对象没有被卸载，并与 AB 包切断了联系，在重复加载时并不会修复这种联系，所以内存中有了重复的对象（对这些资源对象进行清理，如引用计数）。
-        * 删除对象
-    
-            * 运行时，需要使用GameObject.Destroy() 和GameObject.DestroyImmediate() 方法删除游戏对象。
-            * GameObject.Destroy() 会等一帧再彻底删除。因为有可能在这一帧的后面还有地方在操作这个对象，所以一般建议使用它来删除对象。GameObject.DestroyImmediate() 表示立即删除。
+* 运行模式：![image-20220617222343707](../../img/image-20220617222343707-16556890447216.png)
+
+  * 引用资源：打包时只有被引用到的资源Unity才会打包，常见的是场景中的资源。
+
+  * Resources：![image-20220617222534385](../../img/image-20220617222534385-16556890447204.png)![image-20220617222705079](../../img/image-20220617222705079-16556890447215.png)
+
+    一般使用Resources.Load< T >来加载资源![image-20220619170150544](../../img/image-20220619170150544.png)
+
+    **`Resources`这种动态加载方式是只读的，在游戏打包后，就无法对文件夹的内容进行修改**
+
+    * 删除资源
+      * **游戏对象删除了，它引用的资源其实并没有删除。**  
+      * 使用Resources.UnloadAsset() 以及Resources.UnloadUnusedAssets() 方法强制
+        卸载资源。由于**卸载资源是异步操作**，所以可以使用isDone 来判断是否完成。  
+
+    尽量不要使用Resources来进行资源加载，因为打包后可能会包体过大，**构建的应用启动时间过长，内存管理也更困难**。对于移动平台或需要**热更新的场景下极不友好**（无法进行增量更新 incremental content upgrades ），同时这种**依赖资源名的调用方式**很容易在替换资源时出现问题。
+
+* AssetBundle：与`Resources`不同，`AssetBundle`主要是用于**热更新**，要用AssetBundle 首先要**把资源打包成.assetbundle文件，再动态的去加载这个文件**，本地或者网络服务器都可以。
+
+  * 组成：AssetBundle 由**头文件（ Header ）和数据段（ Data Segment ）组成**，数据段中**包含着所有资源对象**，而**头文件**中包含了 **AssetBundle 的信息**，此 AB 包的标识符（ Identifier ），压缩类型（ Compression Type，是否压缩，LZMA - 全包压缩，LZ4 - 单独压缩）以及数据清单（ Manifest，对象名作为 key 用来查找数据段位置）。
+  * 工作流程：先将资源按照一定的方式**打包成多个 AssetBundle**（ BuildPipline.BuildAssetBundles 方法 ），然后将这些**二进制文件放到 StreamingAssets 目录**下（ 类似 Resources，但**构建时不会进行打包的处理** ），在**运行时加载需要的 AssetBundle**（ 4 个 API，最快最好的是 AsseBundle.LoadFromFile ），之后**使用 AssetBundle 中的资源对象**（ 3 种 6个 API，LoadAllAssets 最快，LoadAsset，LoadAssetsWithSubAssets ）。
+  * 卸载：对于 AssetBundle 的卸载需要有一定的讲究，因为两种卸载方式各有各的好处（坑？），卸载 AssetBundle 使用 API AssetBundle.Unload(bool)，**参数表示是否卸载从此 AB 包中加载的资源对象实例**。true 时，会立即卸载实例化的所有对象，造成的问题是如果场景中依然有对象对这些卸载了的资源的对象进行访问会出现 missing 的情况（确保不会再使用，比如场景切换时）；false 时，会在下次加载同样的 AB 包时，造成同样的资源对象重复的情况，因为先前加载的对象没有被卸载，并与 AB 包切断了联系，在重复加载时并不会修复这种联系，所以内存中有了重复的对象（对这些资源对象进行清理，如引用计数）。
+* 删除对象
+
+    * 运行时，需要使用GameObject.Destroy() 和GameObject.DestroyImmediate() 方法删除游戏对象。
+    * GameObject.Destroy() 会等一帧再彻底删除。因为有可能在这一帧的后面还有地方在操作这个对象，所以一般建议使用它来删除对象。GameObject.DestroyImmediate() 表示立即删除。
