@@ -2662,6 +2662,8 @@ const string s = "Inception";
 
     * 定义：创建**类或者函数的蓝图或者公式**，分为**函数模板和类模板。**
 
+    * 模板与继承或者组合的关系：模板提供了一种**重用源代码**的方法，继承或者组合提供了一种**重用对象代码**的方法
+
     * 实现方式：模板定义**以关键字 `template` 开始**，后**跟一个模板参数列表**。模板类型参数前必须使用关键字 `class` 或者 `typename`，在模板参数列表中这两个关键字含义相同，可互换使用。
 
       ```c++
@@ -2670,18 +2672,311 @@ const string s = "Inception";
 
     * 作用：
 
-      * **编译时检查数据类型**，保证了类型安全。
+      * **编译时检查数据类型**，保证了**类型安全**。
 
-    * 函数模板：当调用一个模板时，编译器用函数实参来推断模板实参，从而使用实参的类型来确定绑定到模板参数的类型。**故可不同加尖括号指明模板类型实参。**
+    * 限制：
 
-    * 类模板：编译器**不能为类模板推断模板参数类型**，需要在使用该类模板时，在模板名后面的尖括号中指明类型。
+      * 引用不能作为模板实参。
+
+      * 与常规类成员函数不同，**类模板成员函数的声明和定义都应该放在同一个头文件中**。
+
+      * 编译器会将模板中类型参数**标识符定义为模板声明范围内的类型名称**，不能在该范围内重新定义：【VC++ 5.0不会标记类型参数重复定义为一个错误】
+
+        ```c++
+        template <class T, int size>
+        class Stack
+        {
+        	int T ; //error type-parameter re-defined.
+        	void f()
+        	{
+        		char T ; //error type-parameter re-defined.
+        	}
+        } ;
+        
+        class A {} ;
+        int main()
+        {
+        	Stack<A,10> si ;
+               return 0 ;
+        }
+        ```
+
+    * 函数模板：
+
+      * 设计目的：简洁方便地**对每种类型的数据执行相同的操作**
+
+      * 使用：当调用一个模板时，编译器用函数**实参来推断**模板实参，从而使用实参的类型来确定绑定到模板参数的类型。**故可不同加尖括号指明模板类型实参。**
+
+        ```c++
+        #include <iostream>
+        using namespace std ;
+        //max returns the maximum of the two elements
+        template <class T>
+        T max(T a, T b)
+        {
+        	return a > b ? a : b ;
+        }
+        void main()
+        {
+           
+        	cout << "max(10, 15) = " << max(10, 15) << endl ;
+        	cout << "max('k', 's') = " << max('k', 's') << endl ;
+        	cout << "max(10.1, 15.2) = " << max(10.1, 15.2) << endl ;
+        }
+        ```
+
+      * 常见使用场景：STL库中的算法函数
+
+      * ```c++
+        #include <iostream>
+        using namespace std ;
+        //max returns the maximum of the two elements
+        template <class T>
+        T max(T a, T b)
+        {
+        	return a > b ? a : b ;
+        }
+        ```
+
+    * 类模板：
+
+      * 类模板Stack：
+
+      ```c++
+      //stack.h
+      #pragma once
+      template <class T>
+      class Stack
+      {
+      public:
+      	Stack(int = 10) ; 
+      	~Stack() { delete [] stackPtr ; }
+      	int push(const T&); 
+      	int pop(T&) ;  // pop an element off the stack
+      	int isEmpty()const { return top == -1 ; } 
+      	int isFull() const { return top == size - 1 ; } 
+      private:
+      	int size ;  // Number of elements on Stack
+      	int top ;  
+      	T* stackPtr ;  
+      } ;
+      
+      //constructor with the default size 10
+      template <class T>
+      Stack<T>::Stack(int s)
+      {
+      	size = s > 0 && s < 1000 ? s : 10 ;  
+      	top = -1 ;  // initialize stack
+      	stackPtr = new T[size] ; 
+      }
+       // push an element onto the Stack 
+      template <class T>
+      int Stack<T>::push(const T& item)
+      {
+      	if (!isFull())
+      	{
+      		stackPtr[++top] = item ;
+      		return 1 ;  // push successful
+      	}
+      	return 0 ;  // push unsuccessful
+      }
+      
+      // pop an element off the Stack
+      template <class T> 
+      int Stack<T>::pop(T& popValue) 
+      {
+      	if (!isEmpty())
+      	{
+      		popValue = stackPtr[top--] ;
+      		return 1 ;  // pop successful
+      	}
+      	return 0 ;  // pop unsuccessful
+      }
+      ```
+
+      * 使用类模板：编译器**不能为类模板推断模板参数类型**，需要在使用该类模板时，在模板名后面的尖括号中指明类型。
+
+      ```c++
+      #include <iostream>
+      #include "stack.h"
+      using namespace std ;
+      void main()
+      {
+      	typedef Stack<float> FloatStack ;
+      	typedef Stack<int> IntStack ;
+      
+      	FloatStack fs(5) ;
+      	float f = 1.1 ;
+      	cout << "Pushing elements onto fs" << endl ;
+      	while (fs.push(f))
+      	{
+      		cout << f << ' ' ;
+      		f += 1.1 ;
+      	}
+      	cout << endl << "Stack Full." << endl
+      	<< endl << "Popping elements from fs" << endl ;
+      	while (fs.pop(f))
+      		cout << f << ' ' ;
+      	cout << endl << "Stack Empty" << endl ;
+      	cout << endl ;
+      
+      	IntStack is ;
+      	int i = 1.1 ;
+      	cout << "Pushing elements onto is" << endl ;
+      	while (is.push(i))
+      	{
+      		cout << i << ' ' ;
+      		i += 1 ;
+      	}
+      	cout << endl << "Stack Full" << endl
+      	<< endl << "Popping elements from is" << endl ;
+      	while (is.pop(i))
+      			cout << i << ' ' ;
+      	cout << endl << "Stack Empty" << endl ;
+      }
+      ```
+
+  * 模板实例化：
+
+    * 编译器**识别到**显式或隐式地【类、函数】**模板实例化**时，将会根据对应模板**生成对应模板实参的类和函数的定义**，注意：编译器**不会为不需要实例化的函数、非虚成员函数、类或成员类生成定义。**
+
+      ```c++
+      template <class T>
+      class Z
+      {
+        public:
+      Z() {} ;
+      ~Z() {} ;
+      virtual void Test() {} //  the compiler generates a definition for X<int>::Test, even if it is not required. 如果模板实例化对应虚函数定义会自动生成
+      void f(){} ;
+      void g(){} ;
+      } ;
+      
+      //max returns the maximum of the two elements
+      template <class T>
+      T max(T a, T b)
+      {
+          return a > b ? a : b ;
+      }
+      
+      template <class T>
+      void Test(T r_t)
+      {
+      }
+      
+      template <class T> class X ; // the template declared but not defined
+      int main()
+      {
+      Z<int> zi ; //implicit instantiation generates class Z<int>
+      zi.f() ;    //and generates function Z<int>::f() 
+      Z<float> zf ; //implicit instantiation generates class Z<float>
+      zf.g() ;      //and generates function Z<float>::g()
+          
+      //template class Z<int> ; //explicit instantiation of class Z<int>
+      //template class Z<float> ; //explicit instantiation of 
+          
+      // 只是声明并不需要定义，故编译器不会为其生成定义 
+      Z<int>* p_zi ; //instantiation of class Z<int> not required
+      Z<float>* p_zf ; //instantiation of class Z<float> not required
+          
+      int I ;
+      I = max(10, 15) ; //implicit instantiation of max(int, int)
+      char c ;
+      c = max('k', 's') ; //implicit instantiation of max(char, char)
+          
+      //explicit instantiation of Test(int) 注意部分编译器可能不支持此语法。。
+      template void Test<int>(int) ;
+      X<int> xi ; //error C2079: 'xi' uses undefined class 'X<int>' 模板必须定义
+      return 0 ;
+      }
+      ```
+
+    * **模板提供复用的源代码，编译器根据模板实参来生成对应类的定义**，如果模板中有static成员，模板实例化出多少种定义，就会有多少个对应static成员
+
+      ```c++
+      // 模板类 A  static变量 整个程序有几份 模板实例化出几种类定义 就有几份static变量
+      template<typename T> class tempClass  {
+      public:
+      	static int a;
+      };
+      template class tempClass<int>; // explict instantiation
+      template class tempClass<double>;
+      // 定义不同模板实参类对应的静态变量
+      int tempClass<int>::a = 5;
+      int tempClass<double>::a = 6;
+      
+      void testStaticTemplate() {
+      	std::cout << tempClass<int>::a << std::endl; // 5
+      	std::cout << tempClass<double>::a << std::endl; // 6
+      	std::cout << &(tempClass<int>::a) << std::endl; // 00E4A00C
+      	std::cout << &(tempClass<double>::a) << std::endl;// 00E4A010
+      
+      	tempClass<int> Int1;
+      	tempClass<int> Int2;
+      	Int1.a = 4;
+      	std::cout << tempClass<int>::a << std::endl; // 4
+      	Int2.a = 3;
+      	std::cout << tempClass<int>::a << std::endl; // 3
+      }
+      ```
+
+  * 模板和友元：
+
+    * 可以**在类模板和全局函数、另一个类的成员函数(可能是模板类)甚至整个类(可能是模板类)之间建立友谊。**下表列出了**声明类的不同类型朋友**的结果。![image-20230318171551915](../../img/image-20230318171551915.png)
 
   * 函数模板和类模板的区别：
 
     * **实例化方式**不同：**函数模板实例化由编译程序在处理函数调用时自动完成**，类模板实例化需要**在程序中显式指定**。
+
     * **实例化的结果**不同：函数模板实例化后是一个函数，类模板实例化后是一个类。
+
     * **默认参数**：**函数模板不允许有默认参数**，**类模板**在模板参数列表中**可以有默认参数**。
+
+      * 注意：
+
+        * 编译器**不允许在特化的声明或定义中指定默认参数**。
+
+        * 如果为任何形式参数指定默认模板参数，则规则与函数和默认参数相同。**一旦声明了默认参数，所有后续参数都必须具有默认值。**
+
+        * C++允许**非类型模板参数**
+
+          * 基于值的模板，参数类型已经确定，参数名也确定，但值未确定，可能有默认值，但**无法对其赋值或者修改！！**非类型模板参数类型**不能声明为浮点型**【单双精度都不行】
+
+          ```c++
+          template <class T = float, int elements = 100> Stack{
+              ....
+              T elems[elements]; // 使用非类型模板参数作为容量
+              void f(){elements++; // error}
+          }
+          template <double d> class X; //error C2079
+          template <float d> class X;
+
+        * 编译器会将**可以解释为参数声明或类型参数的模板参数**视为**类型模板参数**。todo理解http://users.cis.fiu.edu/~weiss/Deltoid/vcstl/templates
+
+          ```c++
+          class T {} ;
+          int i ;
+          
+          template <class T, T i>
+          void f(T t)
+          {
+          	T t1 = i ; //template arguments T and i
+          	::T t2 = ::i ; //globals T and i 
+          } 
+          
+          
+          
+          int main()
+          {
+          	f('s') ; //C2783 here
+          	return 0 ;
+          }
+          ```
+
+          
+
     * **特化**：**函数模板只能全特化**；而**类模板可以全特化，也可以偏特化。**
+
     * **调用方式**不同：**函数模板**可以进行类型推导，可以**隐式调用，**也可以显式调用；**类模板只能显式调用。**
 
   * 可变参数模板：
@@ -2702,7 +2997,7 @@ const string s = "Inception";
 
     * 原因：**模板并非对任何模板实参都合适、都能实例化**，某些情况下，**通用模板的定义对特定类型不合适，可能会编译失败，或者得不到正确的结果。**
 
-    * 模板特化：**模板参数在某种特定类型下的具体实现**。分为函数模板特化和类模板特化
+    * 模板特化：**为特定类型提供特殊定义来覆盖模板生成的代码**。**模板参数在某种特定类型下的具体实现**。分为函数模板特化和类模板特化
 
       函数模板特化：将函数模板中的**全部类型**进行特例化，称为函数模板特化。**函数模板不能被偏特化**。
       类模板特化：将类模板中的**部分或全部类型**进行特例化，称为类模板特化。
@@ -2710,7 +3005,7 @@ const string s = "Inception";
     * 特化分为**全特化和偏特化**：
 
       - 全特化：模板中的模板参数**全部特例化**。
-      - 偏特化：模板中的模板参数**只确定了一部分，剩余部分需要在编译器编译时确定。**
+      - 偏特化：模板中的模板参数**只确定了一部分，剩余部分需要在编译器编译时确定。**【Visual C++ 5.0不支持】
 
     * 说明：要**区分下函数重载与函数模板特化**
       定义函数模板的特化版本，**本质上是接管了编译器的工作，为原函数模板定义了一个特殊实例，而不是函数重载**，函数模板特化并不影响函数匹配。
@@ -2757,12 +3052,25 @@ const string s = "Inception";
           }
       };
       
+      //max returns the maximum of the two elements
+      template <class T>
+      T max(T a, T b)
+      {
+          return a > b ? a : b ; // 对于字符串常量比较的是地址
+      }
+      
+      // Specialization of max for cosnt char* 用于比较字符串常量 
+      template <>
+      const char* max(const char* a, const char* b)
+      {
+          return strcmp(a, b) > 0 ? a : b ;
+      }
       
       int main() {
       
       /**
       模板类调用优先级：
-          全特化类 > 偏特化类 > 模板类
+          全
       */
       
           A<int, string> a(1, "zhangsan");     // 调用类模板特化, 即 A<int, string>
@@ -2770,7 +3078,9 @@ const string s = "Inception";
           A<int, int> aa(1, 2);     // 第一个参数时 int, 而第二个参数不是 string, 故调用了类模板偏特化
       
           A<string,int> aaa("zhangsan", 1);   // 第一个参数不是 int, 不符合模板特化和偏特化，故调用类模板
-      
+      	
+          cout << "max(10.1, 15.2) = " << max(10.1, 15.2) << endl ; //15.2
+          cout << "max(\"Aladdin\", \"Jasmine\") = " << max("Aladdin", "Jasmine") << endl ; // Jasmine
           return 0;
       }
       ```
@@ -2792,13 +3102,13 @@ const string s = "Inception";
   * 类型萃取：
 
     * 定义：**类型萃取（type traits）使用模板技术来萃取类型**（包含自定义类型和内置类型）**的某些特性**，**用以判断该类型是否含有某些特性**，从而在泛型算法中来**对该类型进行特殊的处理**用来提高效率或者得到其他优化。【确定变量去除引用修饰后真正的变量类型或者CV属性】
-  
+
     * 使用可参考：#include <type_traits> 其中定义了很多类型萃取常用的类模板函数，比如`is_convertible`，`is_trivially_destructible`等。
-  
+
     * 原因：**模板传入的类型具有不确定性，对于需要根据针对传入的不同类型和不同特性做不同的处理时，我们可以通过类型萃取对传入的参数类型和特性进行提取。**【在编译期就根据type_traits提供的类模板函数判断true和false，进而选择性的生成你想要的code。】
-  
+
     * 类型萃取使用例子：
-  
+
       https://zhuanlan.zhihu.com/p/547313994
       
       iterator_traits：用来**萃取迭代器内部定义的各种类型并对外统一为相同的类型名**，如迭代器本身的类型，迭代器指向元素的类型等。
@@ -2806,9 +3116,9 @@ const string s = "Inception";
       具体实现是：对于迭代器为原生指针类型的有一个偏特化版本，然后如果迭代器有iterator_category属性且迭代器可转化为input_iterator或output_iterator时则有对应的偏特化版本可以萃取迭代器内部定义的各种属性。
       
     * 相关原理：
-  
+
       一般是通过type_traits提供的**编译期的true和false**以及**模板特化**来实现对类型某些特性的萃取。
-  
+
     
 
 * 编译相关
