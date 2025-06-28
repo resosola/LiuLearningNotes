@@ -127,11 +127,27 @@
             * VS查找DLL路径【系统环境变量Path->用户环境变量Path】
             * 注意系统环境变量和用户环境变量相互独立，**为系统级别的配置使用系统环境变量**，并为用户级别的配置使用用户环境变量，以避免复杂的依赖关系和不必要的复杂性。
             * 库文件也需要经过编译生成，都是由`*.o`目标文件生成的。
+            * **编译时**查找动态链接库的顺序
+              * 通过编译选项-L 指定的目录
+              * 通过链接选项–rpath=指定的目录
+              * 通过环境变量LIBRARY_PATH指定的目录(:分割)
+              * 通过环境变量LD_LIBRARY_PATH指定的目录(:分割)
+              * /lib
+              * /usr/lib
+              * /etc/ld.so.cache中缓存的路径，通过/etc/ld.so.conf指定，通过ldconfig命令更新缓存。
+            * linux下**运行时**查找动态链接库的顺序
+              * 通过rpath连接选项指定的目录
+              * 通过环境变量LD_RUN_PATH指定的目录(:分割)
+              * 通过环境变量LD_LIBRARY_PATH指定的目录(:分割)
+              * 编译时实际的链接路径（不是查找过的路径，而是找到了这个so的路径）
+              * /lib
+              * /usr/lib
+              * 另外可以通过ldd <可执行程序>来查看运行将使用链接库，也可以看到缺少的库。
+                还可以通过chrpath -l <可执行程序>查看程序被设置的rpath。
         * 注意：
           * linux 静态库 .a，动态库为.so
   
   * C++程序内存分布：
-  
     * ELF文件：
       * 定义：**可执行与可链接格式** (Executable and Linkable Format) 是一种用于可执行文件、目标代码、共享库和核心转储 （core dump） 的标准文件格式，**每个 ELF 文件都由一个 ELF header 和紧跟其后的文件数据部分组成**，可以参考ELF 文件的构成如下:![1_2_1.png](../../img/1661172875-aSnoQn-1_2_1.png)
       * 可执行程序内部是**分段存储的**
@@ -148,17 +164,22 @@
       * **全局区/静态存储区**：**主要为 .bss 段和 .data 段，存放全局变量和静态变量，程序运行结束操作系统自动释放，**在 C 中，**未初始化的放在 .bss 段中**，**初始化的放在 .data 段中，C++ 中不再区分了。**
       * **常量存储区**：.rodata 段，**存放的是常量**，不允许修改，程序运行结束自动释放。【**C风格字符串会在此处申请空间**，后续遇到同样字符串则同样在这个位置取出对应字符串的首字符地址返回】
       * **代码区**：.text 段，**存放源程序编译后的机器码**，不允许修改，但可以执行。**编译后的机器码存放在这里。**
-    * 从操作系统的本身来讲，以上存储区在该程序内存中的虚拟地址分布是如下形式（**虚拟地址从低地址到高地址，实际的物理地址可能是随机的**）：![图片 1.jpg](../../img/1643371423-LnOKvn-图片 1.jpg)
-
-
+    * 从操作系统的本身来讲，以上存储区在该程序内存中的虚拟地址分布是如下形式（**虚拟地址从低地址到高地址，实际的物理地址可能是随机的**）：
+    ![图片 1.jpg](../../img/1643371423-LnOKvn-图片 1.jpg)
+    ![alt text](image.png)
 * 堆与栈：
-
+  
   * 运行时栈：
     * 定义：程序运行后对应的进程中用于表示函数调用的内存区域，与栈相符都是后进先出的特性，**函数调用过程需满足以下三大机制。**![image-20240126165542733](../../img/image-20240126165542733.png)
       * **传递控制**：调用某个函数时，会**将返回地址压入栈中**，当函数执行完成返回时，为程序计数器指明，**接着从哪个位置开始执行指令**，同时调用某个函数时，更新程序计数器为**要具体执行的指令位置**。【call指令实现整个传递控制的过程，返回地址一般为call指令后的那条指令的地址。】
       * **传递数据：**函数调用传递参数时，如果**调用过程需要的空间超出寄存器大小时**【通过寄存器最多传递6个整数值】，**才会在栈上分配空间即栈帧**，栈帧内**将会存储额外的局部变量**，**调用的返回值也会存储在寄存器中以便调用函数使用。**
       * **分配和释放空间**：CPU寄存器中记录着当前栈指针的位置，因为栈在进程空间中是向**低地址方向扩展**的，故在**栈上分配空间时将栈指针减少对应值，释放空间时栈指针增加对应值即可。
     * 栈溢出：一般情况**操作系统为每个进程会固定栈空间的大小**，也可以**根据自己的需要来分配每个进程的栈空间**，如果**剩余栈空间不够新的申请大小时，会分配失败导致栈溢出。**
+      默认值由系统和编译器决定：
+      ​编译时指定：链接阶段可通过参数设置栈大小（如 GCC 的 -Wl,--stack=<size>）。
+      ​运行时限制：操作系统对栈大小有限制（如 Linux 默认 8MB，可通过 ulimit -s 查看或修改）。
+      ​动态调整：
+      某些系统支持栈的动态扩展（如 Linux 通过虚拟内存机制按需扩展），但受最大限制约束。
     
   * 堆：
     * 定义：堆的内存空间一般**由操作系统或者专门内存程序来管理的**。在 C/C++ 一般用 malloc 或者 new 来从堆中申请内存，使用 free 或者 delete 来释放空间，空间释放后会有操作系统进行回收。
@@ -166,7 +187,7 @@
   * 栈和堆的对比：
     * **申请方式**：
       * **堆中存放的变量由程序运行时决定的，会有操作系统或者内存管理模块来进行分配的。**
-      * 栈中存放的变量**在编译时由编译器为其在栈上分配了空间**，即**程序编译后该变量在栈中使用的内存即确定**，释放时也由于函数调用的返回，**栈的空间会自动进行回收。**
+      * 栈中存放的变量**在编译期由编译器计算确定大小*，即**程序编译后该变量在栈中使用的内存即确定**，释放时也由于函数调用的返回，**栈的空间会自动进行回收。**
   
     * **申请后系统响应**：
       * 分配栈空间时如果**剩余空间大于申请空间则分配成功**，否则分配失败栈溢出，绝大多数情况下，栈的空间较小，一般栈上分配的变量不会占用太大的空间，且**当函数返回时，当前栈帧中的变量生存周期会结束；**
@@ -205,10 +226,10 @@
   
 * 内存对齐：
 
-  * 定义：编译器**将程序中的每个 `数据单元` 的地址安排为机器字的整数倍。**
+  * 定义：编译器**将程序中的每个 `数据单元` 的地址安排为自身大小的整数倍。**
 
   * 原因：由于 `CPU` 的访问内存的特性决定，`CPU` 访问内存时**并不是以字节为单位来读取内存**，而是**以机器字长为单位**，内存对齐的主要目的是为了**减少 `CPU` 访问内存的次数，加大 `CPU` 访问内存的吞吐量。**
-
+    * 编译器通过字节填充，保证每个成员的地址都满足“成员地址 % sizeof(成员类型) == 0",即内存对齐,保证了访问每个成员数据无需跨越内存块【机器字长长度】，减少了CPU访问内存次数。
   * 内存对齐规则：
 
     * [C/C++内存对齐详解 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/30007037)![image-20220824131236539](../../img/image-20220824131236539.png)
@@ -217,21 +238,35 @@
 
     ![image-20220906165339974](../../img/image-20220906165339974.png)
 
-  * **对齐系数**：**不同编译器有不同默认值，预编译命令#pragma pack(n)可对其改变。**
+  * **对齐系数**：**不同编译器有不同默认值，预编译命令#pragma pack(n)可对其改变。#pragma pack(n)默认为机器字长**
 
-  * **有效对齐值**：**对齐系数和结构体中最长数据类型长度中较小的那个。**
+  * **有效对齐值**：**对齐系数和结构体中成员对齐值【即对齐方式】中较小的那个。**
 
-    * (1) 结构体**第一个成员**的**偏移量（offset）**为0，以后**每个成员相对于结构体首地址的** offset 都是**该成员大小与有效对齐值中较小那个**的整数倍，如有需要编译器会在成员之间加上填充字节。
+    * (1) 结构体**第一个成员**的**偏移量（offset）**为0，以后**每个成员相对于结构体首地址的** offset 都是**该成员对齐方式与有效对齐值中较小那个**的整数倍，如有需要编译器会在成员之间加上填充字节。
   
     * (3) **结构体的总大小**为 **有效对齐值** 的**整数倍**，如有需要编译器会在最末一个成员之后加上填充字节。
+      1. 数组的对齐值 取决于 元素类型，不是数组长度。
+      C/C++ 中规定：一个数组的对齐值 = 数组中单个元素的对齐值。
   
-  * c++11以后引入两个关键字 [alignas (opens new window)](https://zh.cppreference.com/w/cpp/language/alignas)与 [alignof (opens new window)](https://zh.cppreference.com/w/cpp/language/alignof)。其中`alignof`可以计算出类型的对齐方式，`alignas`可以指定结构体的对齐方式。【对齐方式即**有效对齐值**，**若小于\#pragma pack(n)则失效**，其值在不同编译器有不同值，默认为4】
-  
-  * 注意如果有**虚函数，别忘了虚指针。**
-  
-* 大端和小端
+  * c++11以后引入两个关键字 [alignas (opens new window)](https://zh.cppreference.com/w/cpp/language/alignas)与 [alignof (opens new window)](https://zh.cppreference.com/w/cpp/language/alignof)。其中`alignof`可以计算出类型的对齐方式，`alignas`可以指定变量或类型的有效对齐值。【有效对齐值，**若小于\#pragma pack(n)则失效**，其值一般为运行程序的机器字长】
+    * 内存对齐也可以用于缓存行填充，避免伪共享【当多个线程修改**同一缓存行的不同位置**时，**缓存一致性协议（如MESI）**会触发同步，导致缓存行在核间反复传输，导致总线带宽竞争和延迟】，对于频繁修改的变量可以**隔离变量到独立的缓存行**。
+    ```c++
+    struct alignas(64) ThreadData {
+    int counter;
+    // 自动填充至64字节
+    };
 
-  * 字节序：**字节序列的排列方式**。
+    struct alignas(64) Data { // ​缓存行对齐：隔离变量到独立缓存行。 只对整个结构体的起始地址进行对齐要求
+    int x;
+    char padding[60]; // 填充至 64 字节
+    int y;
+    };
+    ```
+  * 注意如果有**虚函数，别忘了虚指针。**
+* 大端和小端:
+
+  * 字节序：**字节序列的排列方式**。【多字节数据的字节顺序，单个字节中的位排列顺序，一般为 bit7...bit0，固定不变
+】
 
     不同 `CPU` 可能采用不同标准的字节序，所以**均按照网络标准转化成相应的字节序。**
 
@@ -243,6 +278,12 @@
     直接调用宏定义 `__BYTE_ORDER` 即可，可以通过引用 `<bits/endian.h>` 即可。
   
     ```c++
+    #include <endian.h>
+    if(__BYTE_ORDER == BIG_ENDIAN) {
+        std::cout << "BIG_ENDIAN" << std::endl;
+    }else{
+        std::cout << "LITTLE_ENDIAN" << std::endl;
+    }
     bool byteorder_check() {
         int a = 1;
         return (*(char *)&a); /* 1 为小端机，0 为大端机 */
@@ -254,7 +295,6 @@
     **将高位与低位依次进行交换即可完成**
   
 * 内存泄漏[一般是**对于动态分配的堆内存**来说]：
-
   * 定义：指**程序在运行过程中**，由于疏忽或错误而**失去了对该内存的控制，从而造成了内存的浪费。**【**堆是动态分配的**，**一旦用户申请了内存分配而未及时释放**，那么**该部分内存在整个程序运行周期内都是被占用的，其他程序无法再使用这部分内存。**】
 
   * 导致的问题：
@@ -317,7 +357,7 @@
     
     * **unique_ptr**：**独享所有权的智能指针**，**内部资源只能被一个指针占有，该指针不能拷贝构造和拷贝赋值。但可以进行移动构造和移动赋值（调用 move() 函数），移动语义表示资源所有权的移动**，即一个 unique_ptr 对象赋值给另一个 unique_ptr 对象，可以通过该方法进行赋值。![1_9_1.png](../../img/1661173525-UZwbot-1_9_1.png)
       如图所示，`object` 资源只能被 `P1` 占有，`P2` 无法对 `object` 有所有权，**只能通过移动构造和移动赋值**给 `P2`。![image-20230227224734893](../../img/image-20230227224734893.png)
-    
+      它禁用了拷贝和赋值函数【使用弃置关键字delete来禁用】，程序员需要明确这个 unique_ptr 指针自诞生就不可以和其它指针分享所指对象的内存。
       ```c++
       #include <iostream>
       using namespace std;
@@ -339,7 +379,7 @@
       };
       
       int main(){
-      	unique_ptr<Rectangle> P1(new Rectangle(10, 5));
+      	unique_ptr<Rectangle> P1(new Rectangle(10, 5)); // 或者 std::unique_ptr<Rectangle> P1 = std::make_unique<Rectangle>(10，5);
       	cout << P1->area() << endl; // This'll print 50
       
       	unique_ptr<Rectangle> P2;
@@ -355,7 +395,7 @@
       ```
 
     * **shared_ptr**：与 unique_ptr 不同的是，**shared_ptr 中持有的资源可以被多个指针共享，但是多个指针指向同一个资源不能被释放多次，因此使用计数机制表明资源被几个指针共享。**![1_9_2.png](../../img/1661173547-qRsDoz-1_9_2.png)
-    
+      todo: atmoic CAS
       `shared_ptr` 并不是线程安全的，**但 `shared_ptr` 的计数是原子操作实现的，利用 `atmoic CAS` 指令实现**
       
       具体实现：**共享指针类中含有两个指针，一个指向具体的共享资源对象，另一个指向整型对象表明资源被几个指针共享**，共享指针对象**生命周期结束后【离开作用域后】引用技术减一**，如果**引用计数为0则通过给定的删除器进行资源的释放**，默认是通过delete释放。
@@ -483,7 +523,7 @@
 
     * 默认构造函数：可以**不用实参进行调用**的构造函数。**合成**默认构造函数：**编译器**自动分配的默认构造函数。自定义构造函数：自己定义的构造函数。
 
-    * 在构造函数中使用**类初始化列表**，会**减少调用构造函数产生的开销**，原因：对于**非内置类型**【如string,容器等】，**少了一次调用默认构造函数和拷贝赋值函数的过程**。【创建临时对象时会调用成员变量默认构造函数进行初始化，且使用临时对象赋值时会调用拷贝赋值函数。】
+    * 在构造函数中使用**类初始化列表**， C++ 中一种用于初始化类成员变量的语法机制，会**减少调用构造函数产生的开销**，原因：对于**非内置类型**【如string,容器等】，**直接构造（或拷贝构造）成员变量 少了一次调用拷贝赋值函数的过程**。【创建临时对象时会调用成员变量默认构造函数进行初始化，且使用临时对象赋值时会调用拷贝赋值函数。】
 
       【C++ 规定，**对象的成员变量的初始化动作发生在进入构造函数本体之前**，**成员变量的初始化通过初始化列表来完成**，**默认的初始化列表为默认构造函数**】
 
@@ -614,7 +654,8 @@ int main() {
 
 
 * **虚函数和虚表的原理是什么（重点）**
-
+  *  C++ 支持**运行时多态（dynamic polymorphism）**的核心机制
+  * 虚表是编译器实现细节，标准没有强制使用 vtable/vptr，但主流编译器（如 GCC、Clang、MSVC）都用这个机制。
   https://blog.twofei.com/496/
 
   https://zhuanlan.zhihu.com/p/410786957
@@ -630,6 +671,12 @@ int main() {
   * 父类指针指向子类对象时，会自动计算父类在子类内存布局中的偏移并进行转换，**使得指针指向子类中父类部分的起始地址**。
 
   * 派生类对象的内存布局中靠前的为父类对象数据，多继承时按声明顺序【含有虚指针的父类靠前】，虚函数覆盖后，子类内存布局中相应父类的虚表会进行替换，且子类内存布局中一定保证虚指针在首位，无论是父类数据虚指针还是自己的。如果父类有虚指针，子类定义虚函数，则虚指针对应的虚表会添加子类定义的虚函数指针，否则，外部定义一个子类自己的虚指针。【子类定义单独的虚函数**其地址存储在第一个有定义的虚函数父类对应的虚表的后面**，且子类内存布局中有虚函数的父类位置靠前，只有父类都没虚函数时，子类才会有虚指针】
+    * 虚函数的重写会**覆盖到每一个基类的持有这个函数的虚表**中
+    * 虚函数只会出现**第一次被声明的类所拥有的虚表**中，即如果有多个基类有虚函数且子类也定义了虚函数，则子类的虚函数会插入第一个基类的虚表中
+    * 多继承的内存布局顺序
+      * 有虚指针的优先级更高
+      * 同优先级按照继承顺序排
+
 
   * **只有通过指针进行虚函数调用才会发生动态绑定**，因为指针**无法知道指向的对象是哪个派生类**，其需要**获取指针类型对应的虚指针**【地址就是指针的地址】然后**再调用该虚表对应的方法**。【多继承的情况下会**先定位到指向虚函数对应的虚表的虚指针**，如下反汇编所示。】
 
@@ -684,20 +731,20 @@ int main() {
         base2->base2_fun2();
     
         Derive1* derive1 = new Derive1();
-        derive1->base1_fun1();
-        derive1->base2_fun2();
+        derive1->base1_fun1(); // 用的虚指针是Base1的
+        derive1->base2_fun2(); // 用的虚指针是Base2的
         // 反汇编情况如下：
             00DA2605  mov         ecx, dword ptr[derive1]
             00DA2608  add         ecx, 0Ch
             00DA260B  mov         eax, dword ptr[derive1]
-            00DA260E  mov         edx, dword ptr[eax + 0Ch] // 用的虚指针是Base2的
+            00DA260E  mov         edx, dword ptr[eax + 0Ch] 
             00DA2611  mov         esi, esp
             00DA2613  mov         eax, dword ptr[edx + 4] 
             00DA2616  call        eax
             00DA2618  cmp         esi, esp
             00DA261A  call        __RTC_CheckEsp(0D9179Eh)
-        derive1->derive1_fun1();
-        derive1->derive1_fun2();
+        derive1->derive1_fun1(); // 用的虚指针是Base1的
+        derive1->derive1_fun2(); // 用的虚指针是Base1的
     }
     ```
 
@@ -731,7 +778,7 @@ int main() {
 
       * **基类持有默认构造【按照声明顺序调用基类的默认构造】**
 
-      * **类中成员对象持有默认构造【按照声明顺序调用成员类的默认构造】****
+      * **类中成员对象持有默认构造【按照声明顺序调用成员类的默认构造】**
 
       * **持有虚函数的类【为对象生成虚表和插入虚指针，调用处转变成通过虚指针指向的虚表内的相应虚函数进行调用】**
 
@@ -756,8 +803,8 @@ int main() {
     * 函数返回类型为非引用类型时【A fun(int val)】
     * 使用同一类型的变量定义变量时【A a2 = a1 或 A a2(a1) **有类型声明的时候，不管有没有等号都是构造**，之前**定义过用等号接收的就是赋值**。】
 
-
-
+ * 对象模型：
+    * 最简单的模型：![alt text](image-1.png)
 
 ## C++11 新特性
 
@@ -766,7 +813,6 @@ int main() {
 * emplace：就地构造**（直接在容器内构造对象，不用拷贝一个复制品再使用）**，相比与push减少了拷贝构造的过程
 
 * lambda表达式：
-
   * 定义：**一个可调度的代码单元，可以视为一个未命名的内部函数**
   * lambda 函数是一个**仿函数对象**，编译器**在编译时会生成一个 lambda 对象的类**，然后**再生成一个该类未命名的对象**
   * lambda 的形式如下：
@@ -925,7 +971,18 @@ int main() {
       f(1, 2, 3); // 打印3
       f("hello", 3.14); // 打印2
       ```
-  
+  * **对时间和日期操作的现代化解决方案**
+    * <chrono> 头文件
+    * 
+    ```c++
+    auto start = std::chrono::high_resolution_clock::now(); // 获取当前时间点
+    // ... 执行操作 ...
+    auto duration = std::chrono::high_resolution_clock::now() - start; // 计算时长
+    std::cout << "耗时: " << duration.count() << " 纳秒" << std::endl;
+    using namespace std::chrono;
+    milliseconds ms = 1000ms;      // 1000 毫秒
+    seconds sec = duration_cast<seconds>(ms); // 自动转换为 1 秒
+    ```
       
 
 ## C++14
@@ -947,7 +1004,12 @@ int main() {
     | execution::seq       | execution::sequenced_policy            | C++17   | 要求并行算法的执行可以不并行化       |
     | execution::par       | execution::parallel_policy             | C++17   | 指示并行算法的执行可以并行化         |
     | execution::par_unseq | execution::parallel_unsequenced_policy | C++17   | 指示并行算法的执行可以并行化、向量化 |
-
+* std::filesystem（文件操作终极方案）​
+```c++
+namespace fs = std::filesystem;
+fs::path log_path = "/var/log/app";
+if (!fs::exists(log_path)) fs::create_directories(log_path);
+```
 ## C++STL
 
 * 除了stack和queue外，STL中的容器都有在指定位置插入元素的函数insert(iterator position, const valueType val)，**第一个参数是相应迭代器不是整型！！**，而string的insert的第一个参数可以是整型也可以是迭代器，且字符串的插入一般是用来插入字符串，如需插入字符则需迭代器。![image-20220907215737951](../../img/image-20220907215737951.png)
@@ -988,7 +1050,7 @@ int main() {
   * 六大部件之间的关联：![在这里插入图片描述](../../img/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0tpbmdPZk15SGVhcnQ=,size_16,color_FFFFFF,t_70.png)
   
 * STL容器分类：
-
+![alt text](image-5.png)
   * 基本介绍：
 
     * 1，array、vector、deque的**内存是连续的，连续的内存空间必定是支持随机访问的**，其余容器则不具备该特点。其中array为固定长度，vector、deque为变长，vector只能单向扩充，deque可以双向扩充。
@@ -1004,7 +1066,7 @@ int main() {
 
       * 支持随机访问，动态数组，分配的内存空间是以2的倍数动态增长的，**空间扩展时涉及拷贝操作，性能开销较大。**
 
-      * clear操作**只是把vector的size清为0**，但v**ector中的元素在内存中并没有消除，所以在使用vector的过程中会发现内存消耗会越来越多，导致内存泄露**，现在经常用的方法是swap函数来进行解决： 
+      * clear操作**只是把vector的size清为0**，但**vector中的元素在内存中并没有消除，所以在使用vector的过程中会发现内存消耗会越来越多，导致内存泄露**，现在经常用的方法是swap函数来进行解决： 
 
         ```c++
         vector<int>().swap(V); 
@@ -1028,13 +1090,17 @@ int main() {
           - first：指向当前连续空间的**首地址**；
           - last：指向当前连续空间的**末尾地址**；
           - node：它是一个二级指针，**用于指向 map 数组中存储的指向当前连续空间的指针。**
-
+        * start和end迭代器
+        ![alt text](image-2.png)
+        * []操作符重载【先重载deque再重载迭代器】实现随机访问：
+        ![alt text](image-4.png)
+        ![alt text](image-3.png)
       * 基于deque实现的适配器容器
         * stack：
         
         * queue：
         
-          * priority_queue：默认**大顶堆**，第二根泛型参数为实现方式【其他容器less时优先级高的是放尾部，不像大顶堆放的是头部】
+          * priority_queue：默认**大顶堆**，第二个泛型参数为实现方式【自定义排序时需要填入】【其他容器less时优先级高的是放尾部，不像大顶堆放的是头部】
         
             ```c++
             // 小顶堆 小的优先级更高  >
@@ -1053,7 +1119,7 @@ int main() {
 
       * 单链表，因此它们**只能向前迭代**。
 
-  * 关联式容器 associative containers（红黑树实现）
+  * 关联式容器 associative containers（红黑树实现）todo
 
     * 关联容器中的元素是按**关键字**来保存和访问的。
 
@@ -1121,7 +1187,7 @@ int main() {
         int stoi (const string&  str, size_t* idx = 0, int base = 10);
         ```
 
-* 迭代器：
+* 迭代器：todo 0620
 
   * 定义：
 
@@ -1133,7 +1199,7 @@ int main() {
 
     * 输入迭代器(Input Iterator)：只能**向前单步迭代元素**，**不允许修改由该迭代器所引用的元素；**
     * 输出迭代器(Output Iterator)：只能**向前单步迭代元素**，**对由该迭代器所引用的元素只有写权限；**
-    * 向前迭代器(Forward Iterator)：该迭代器可以**在一个区间中进行读写操作**，它**拥有输入迭代器的所有特性和输出迭代器的部分特性**，以及**向前单步迭代元素的能力**；
+    * 向前迭代器(Forward Iterator)：该迭代器可以**在一个区间中单步前进并读写操作**，它**拥有输入迭代器的所有特性和输出迭代器的部分特性**，以及**向前单步迭代元素的能力**；
     * 双向迭代器(Bidirectional Iterator)：在**向前迭代器的基础上增加了向后单步迭代元素的能力；**
     * 随机访问迭代器(Random Access Iterator)：不**仅综合以后 4 种迭代器的所有功能**，**还可以像指针那样进行算术计算；**![image-20230315120804039](../../img/image-20230315120804039.png)
     * ![5_17_1.png](../../img/1661515579-ASMhMu-5_17_1.png)![image-20220916210502336](../../img/image-20220916210502336.png)
@@ -1175,7 +1241,7 @@ int main() {
 
 * 各容器常见的坑：
 
-  * 常见容器添加元素时，都会调用**拷贝构造函数**
+  * 常见容器添加元素时，都会调用**拷贝构造函数**todo和emplace_back的区别
 
   * 通过键下标访问unordered_map时，如果**键不存在，则会插入键并使用默认构造函数初始化出对应的值**【值类型默认的初始值】，存在则返回引用。
 
@@ -1275,13 +1341,13 @@ int main() {
 
   value of floating-point = **significand** x **base**^**exponent,** with its corresponding **sign**.
   
-  sign：表正负
+  sign：表正负 **【符号位】**
   
-  significand：一系列数字，数字个数即精度。
+  significand：一系列数字，数字个数即**精度**。
   
-  base：基底，用一个数字表示，2、10、16，对应数字的significand需用对应进制表示，基底默认为2，故实际存储的只有其他三部分。
+  base：**基底**，用一个数字表示，2、10、16，对应数字的significand需用对应进制表示，基底默认为2，故实际存储的只有其他三部分。
   
-  exponent：幂![image-20220904113551952](../../img/image-20220904113551952.png)https://www.cnblogs.com/chenny7/p/14251913.html
+  exponent：**幂**![image-20220904113551952](../../img/image-20220904113551952.png)https://www.cnblogs.com/chenny7/p/14251913.html
   
 * 常见头文件
 
@@ -1455,7 +1521,6 @@ int main() {
   * 成员纯虚函数：只有接口会被继承 默认实现不会被继承 对于派生类要求有对该纯虚函数的实现 且无法创建声明有纯虚函数的类对象。
 
 * 继承
-
   * 多重继承容易出现的问题：**命名冲突**和**数据冗余**问题。
 
     * 无间接继承一般使用声明属于哪一个类解决
@@ -1774,7 +1839,6 @@ int main() {
       ```
   
   * 运算符
-  
     * 不同的运算符对运算对象的要求各不相同，有的需要左值运算对象，有的需要右值运算对象，返回值也有差异，有的需要左值结果有的需要右值结果，但是有一个简单方法判断需要什么：![image-20230308124458685](../../img/image-20230308124458685.png)
   
     * 常见运算符重载方式：![image-20230308124542954](../../img/image-20230308124542954.png)
@@ -1824,7 +1888,6 @@ int main() {
       * **将左值对象转换为右值引用的表达式。**【static_cast<int&&>()、std::move()】
     
       * 访问xvalue对象的成员的表达式
-  
   * C++变量类型：
   
     * 值类型：表明一个变量是代表实际数值。**所有的原生类型、枚举、结构、联合、类都代表值类型。**
@@ -1859,10 +1922,11 @@ int main() {
       * 如果一个对象**内部有较大的堆内存或者动态数组时**，很有必要写move语义的**拷贝构造函数和赋值函数**，**避免无谓的深拷贝**，以提高性能。【没有对应的拷贝构造和拷贝赋值时，传入右值仍可以进行，**因为拷贝构造的常量左值引用形参仍能接受**】
   
       * move对于**含资源（堆内存或句柄）的对象**来说更有意义。
+        * 对一个 const T& 做 std::move() 得到的是 const T&&，依然不能移动！因为移动构造需要非常量右值（T&&），不能是 const T&&，自动退回到 拷贝构造
   
-      * 可使用 **std::move 将左值变成右值引用**
+      * 可使用 **std::move  将左值表达式转换成一个右值引用类型的表达式，以触发移动构造/赋值函数调用。**
   
-    * 【**利用万能引用和forward函数实现完美转发**】在模板函数中确保**按照参数的实际类型进行转发。**
+    * 【**利用万能引用和forward函数实现完美转发**】在模板函数中确保**按照参数的值类别进行转发。**
   
       * ```c++
         void processValue(int& a){ cout << "lvalue" << endl; }
@@ -2265,22 +2329,17 @@ int main() {
          * cosnt_cast是四种类型转换符中**唯一可以对常量进行操作的转换符**
 
          * 去除常量性是一个**危险的动作**，尽量避免使用。
+        const string s = "Inception";
+                    string& p = const_cast <string&> (s);
+                    string* ps = const_cast <string*> (&s);  // &s 的类型是 const string*
 
-```c++
-const string s = "Inception";
-            string& p = const_cast <string&> (s);
-            string* ps = const_cast <string*> (&s);  // &s 的类型是 const string*
-```
 
   * reinterpret_cast：用于进行**各种不同类型的指针之间**、**不同类型的引用之间**以及**指针和能容纳指针的整数类型之间的转换**。转换时，执行的是**逐个比特复制的操作。**
 
     * 使用场景：不到万不得已，不用使用这个转换符，高危操作；
 
     * 使用特点：reinterpret_cast是从底层对数据进行重新解释，依赖具体的平台，可移植性差；
-
-
 ​    
-
   * ```c++
        class A
        {
@@ -2316,7 +2375,6 @@ const string s = "Inception";
   * dynamic_cast：
 
     * 其他三种都是**编译时完成的**，**动态类型转换**是在**程序运行时处理的**，**运行时会进行类型检查。**
-
     * 只能用于**带有虚函数的基类或派生类的指针或者引用对象的转换**，转换成功返回指向类型的指针或引用，**转换失败返回 `NULL`**；**不能用于基本数据类型的转换。**
 
 【**运行时的类型信息需通过虚函数表获取**】
@@ -2324,7 +2382,11 @@ const string s = "Inception";
 * 在**向上进行转换**时，即派生类类的指针转换成基类类的指针和 static_cast 效果是一样的，（注意：这里只是**改变了指针的类型**，指针指向的对象的类型并未发生改变）。【向上类型转换不需要虚函数，**向上转换永远是安全的**】
 
 * 在**下行转换**时，基类的指针类型转化为派生类类的指针类型，**只有当要转换的指针指向的对象类型为转化以后的对象类型及其派生类时**，才会转化成功。
-
+* 使用规范：
+  * 先判断能不能用static_cast【看着似乎能转和向上转】
+  * 涉及多态类型向下转换再使用dynamic_cast
+  * 用const_cast去除常量属性时，只能对引用和指针作用，且注意使用方式
+  * reinterpret_cast转换时要想的是会对内存单元以新类型方式重新解释，最后才使用
   * 其他类型转换的场景：
     * 条件运算符的隐式转换：
       ![image-20220923213547596](../../img/image-20220923213547596.png)
@@ -2733,12 +2795,51 @@ const string s = "Inception";
         ```
 
       * 可对 operator new 进行重载，实现自己的内存分配。
-
+        ```c++
+        class Foo
+        {
+        public:
+          static void *operator new (size_t size)
+          {
+              Foo *p = (Foo*)malloc(size);
+              return p;
+          }
+        
+          static void operator delete(void *p, size_t size)
+          {
+              free(p);
+          }
+        };
+        ```
     * placement new：
-
+      * 语法：
+      ```c++
+      Object * p = new (address) ClassConstruct(...)
+      new(&tmp[i]) T(data[i]); // placement new 在已分配的某块内存上调用 拷贝构造函数
+      new(&tmp[i]) T(); // placement new 在已分配的某块内存上调用 默认构造函数
+      // Default placement versions of operator new.
+      _GLIBCXX_NODISCARD inline void* operator new(std::size_t, void* __p) _GLIBCXX_USE_NOEXCEPT
+      { return __p; }
+      _GLIBCXX_NODISCARD inline void* operator new[](std::size_t, void* __p) _GLIBCXX_USE_NOEXCEPT
+      { return __p; }
+       class Foo
+      {
+      public:
+          //一般的 operator new 重载
+          void* operator new(size_t size)
+          { return malloc(size); }
+      ​
+          //标准库已经提供的 placement new() 的重载形式
+          void* operator new(size_t size, void* start)
+          { 
+            dosomething;
+            return start; 
+          }
+      };    
+      ```
       https://zhuanlan.zhihu.com/p/228001107
 
-      * 定义：即**定位放置new**，在某些特殊情况下，可能需要**在已分配的特定内存调用构造函数来初始化指定类型的对象**，以达到**内存复用**的目的。【如果没有placement new则会缺失初始化数据，定义了虚析构函数的类会缺失虚指针，调用delete时找不到正确的虚析构函数】
+      * 定义：即**定位放置new**，在某些特殊情况下，可能需要**在已分配的特定内存调用构造函数来初始化指定类型的对象**，以达到**内存复用**的目的。【如果没有placement new则会缺失初始化数据，定义了虚析构函数的类会缺失虚指针，调用delete时找不到正确的虚析构函数】【在一个预先准备好了的内存缓冲区上进行构造函数，不需要查找内存，内存分配的时间是常数】
 
       * 调用的new操作：
 
@@ -2756,7 +2857,8 @@ const string s = "Inception";
 
     * new 和 malloc的区别：
 
-      https://www.cnblogs.com/ywliao/articles/8116622.html![image-20220918172518522](../../img/image-20220918172518522.png)
+      https://www.cnblogs.com/ywliao/articles/8116622.html
+      ![image-20220918172518522](../../img/image-20220918172518522.png)
 
       相关概念：
 
@@ -2798,6 +2900,28 @@ const string s = "Inception";
   * malloc的原理
 
     * https://zhuanlan.zhihu.com/p/57863097
+    * 标准库实现的内存分配器一般的malloc流程如下：
+      * malloc采用的是内存池【用户态内存管理器（memory allocator）】的实现方式，malloc内存池实现方式更类似于STL分配器和memcached的内存池，先申请一大块内存，然后将内存分成不同大小的内存块，然后用户申请内存时，直接从内存池中选择一块相近的内存块即可。
+      * 在进程堆的 **​空闲内存链表（Free List）**​ 中查找是否有足够大的空闲内存块。
+        a.找到：分配器直接分配或者分割成两部分，一部分满足当前请求，剩余部分保留在空闲链表后续使用
+        b.未找到：通过**系统调用**(brk、mmap)向操作系统申请扩大堆空间【只是分配了虚拟内存，还没有映射到物理内存，当访问申请的内存时，才会因为 **缺页异常 ** ，内核分配物理内存 并建立页表映射】
+         * 对于每个进程来说，内核维护着一个brk(break)变量，它指向堆的顶部
+          i.brk/sbrk：调整堆顶指针（Program Break），扩展堆的上边界（适用于小规模连续内存扩展）。【只是把虚拟地址空间挂在页表上，标记为“未分配物理页”】
+          ii.mmap：映射一块新的匿名内存区域（适用于大块内存或非连续内存分配，例如 glibc 默认对大于 128KB 的请求使用 mmap）。
+      * 总结： malloc 是用户态分配器，优先用空闲块，不够时通过系统调用（如 mmap）申请虚拟内存，但OS 并不会立即分配物理内存页，只有在真正访问该地址时才会通过缺页异常分配物理页。
+      * 内存分配器的核心目标：内存分配器需要在 **​性能和​内存利用率** 之间权衡：
+        **减少系统调用**：频繁调用 brk/mmap 申请内存或 munmap 释放内存会带来性能开销。
+        ​**减少内存碎片**：合并空闲块、延迟归还内存以重用。
+      * 关键细节：
+        空闲内存链表的管理：
+        1、分配器会将释放的内存块（通过 free 或 delete）插入空闲链表，并通过 ​合并（Coalescing）​ 相邻空闲块来减少碎片。
+        2、空闲链表通常按内存块大小组织（例如，ptmalloc 使用多个链表管理不同大小的块），以提高分配效率。
+        系统调用的选择策略：
+        1、brk 扩展的堆空间必须是连续的，如果堆顶已被其他内存（如 mmap 映射的区域）占用，无法继续扩展，此时可能改用 mmap
+        2、mmap 分配的内存可以直接通过 munmap 快速归还操作系统（例如释放大块内存时），而 brk 扩展的内存通常由分配器保留以便重用。
+        内存归还操作系统的延迟：
+        调用 free 或 delete 时，内存块会被标记为空闲并插入链表，但进程仍持有这些内存，以便后续的 malloc 快速分配。只有通过 brk 缩小堆顶或 munmap 时，内存才会真正归还操作系统。
+        * 只有释放的内存块 其到堆顶的区域都已被 释放了，堆才可能被收缩
 
 * 常见库函数
 
@@ -2807,7 +2931,7 @@ const string s = "Inception";
 
     * 作用：在头文件string.h中，作用是**拷贝一定长度的内存的内容**
 
-      ```c++
+      ```c++ 
       void *memcpy(void *dst, const void *src, size_t count);
       void *memmove(void *dst, const void *src, size_t count);
       ```
@@ -2890,28 +3014,29 @@ const string s = "Inception";
 
       栈区：**从高地址向低地址扩展**，即**分配整块内存时从高地址向低地址方向分配**。局部变量存储在栈区。【分配是向高地址扩展，写的时候还是从低地址写到高地址（字符串是如此，数值也是如此【小端模式】）】
 
-      ```c++
-      int main()
-      {
-          int var = 0x11112222;
-          char arr[10];
-          cout << "Address : var " << &var << endl;
-          cout << "Address : arr " << &arr << endl;
-          strcpy(arr, "hello world!");
-          cout << "var:" << hex << var << endl; // 将变量 var 以 16 进制输出
-          cout << "arr:" << arr << endl;
-          return 0;
-      }
-      
-      /*
-      Address : var 0x23fe4c
-      Address : arr 0x23fe42
-      var:11002164
-      arr:hello world!
-      */
-      ```
+  ```c++
+  int main()
+  {
+      int var = 0x11112222;
+      char arr[10];
+      cout << "Address : var " << &var << endl; // 占据的低地址内存单元
+      cout << "Address : arr " << &arr << endl;
+      strcpy(arr, "hello world!");
+      cout << "var:" << hex << var << endl; // 将变量 var 以 16 进制输出
+      cout << "arr:" << arr << endl;
+      return 0;
+  }
+  
+  /*
+  Address : var 0x23fe4c
+  Address : arr 0x23fe42
+  var:11002164
+  arr:hello world!
+  */
+  ```
 
-      ![image.png](../../img/1627822193-yqLShF-image.png)
+
+![image.png](../../img/1627822193-yqLShF-image.png)
 
 
 * 泛型编程相关：
@@ -3409,7 +3534,7 @@ const string s = "Inception";
   * C++11提供了**语言层面上的多线程**，包含在头文件<thread>中。它**解决了跨平台的问题**，提供了**管理线程、保护共享数据、线程间同步操作、原子操作等类**
   * C++11 新标准中引入了**5个头文件来支持多线程编程**![img](../../img/v2-76e5e48c9c1d60f9868452cfc9ce7d85_720w.webp)
 
-* 多进程与多线程https://zhuanlan.zhihu.com/p/613630658
+* 多进程与多线程 https://zhuanlan.zhihu.com/p/613630658
 
   * 多进程并发
 
@@ -3523,6 +3648,72 @@ const string s = "Inception";
         - 作用域规则同 lock_grard，析构时自动释放锁
         - 不可复制，可移动
         - **条件变量需要该类型的锁作为参数（此时必须使用unique_lock）**
+    ```c++
+    // 一个线程生产数据，另一个线程消费数据
+    #include <iostream>
+    #include <thread>
+    #include <mutex>
+    #include <condition_variable>
+    #include <queue>
+    #include <chrono>
+
+    std::queue<int> data_queue;
+    std::mutex mtx;
+    std::condition_variable cv;
+    bool finished = false;
+
+    void producer() {
+        for (int i = 0; i < 5; ++i) {
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                data_queue.push(i);
+                std::cout << "[Producer] produced: " << i << std::endl;
+            }
+            cv.notify_one(); // 通知消费者
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+
+        // 通知消费者：生产结束
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            finished = true;
+        }
+        cv.notify_all();
+    }
+
+    void consumer() {
+        while (true) {
+            std::unique_lock<std::mutex> lock(mtx);
+            cv.wait(lock, [] { return !data_queue.empty() || finished; });
+
+            while (!data_queue.empty()) {
+                int data = data_queue.front();
+                data_queue.pop();
+                lock.unlock();
+
+                std::cout << "[Consumer] consumed: " << data << std::endl;
+
+                lock.lock();
+            }
+
+            if (finished && data_queue.empty()) {
+                break;
+            }
+        }
+    }
+
+    int main() {
+        std::thread t1(producer);
+        std::thread t2(consumer);
+
+        t1.join();
+        t2.join();
+
+        std::cout << "All done!" << std::endl;
+        return 0;
+    }
+
+    ```
 
   * atomic：
 
@@ -3533,7 +3724,9 @@ const string s = "Inception";
       *  std::atomic<>是一个模板类，使用该模板类实例化的对象，**提供了一些保证原子性的成员函数来实现共享数据的常用操作。**
 
       * std::atomic<>用来定义一个自动加锁解锁的共享变量（“定义”“变量”用词在这里是不准确的，但是更加贴切它的实际功能），**供多个线程访问而不发生冲突。**
-
+      * std::atomic 本身就保证了内存的可见性和一致性
+        * std::atomic 通过底层的内存序（如 memory_order_relaxed/acquire/release/seq_cst）控制 可见性、顺序性
+        * 它能防止编译器重排序和 CPU 缓存不一致等问题
       * ```c++
         //原子类型的简单使用
         std::atomic<bool> b(true);
@@ -3559,15 +3752,21 @@ const string s = "Inception";
             std::cout << std::boolalpha << a.is_lock_free() << std::endl;
             return 0;
         }
+
+        std::atomic<uint64_t> counter(0);
+        void increment() {
+            counter.fetch_add(1, std::memory_order_relaxed);
+        }
+        uint64_t get() {
+            return counter.load();
+        }  
         ```
-      
-      * 
 
   * condition_variable:
 
     * condition_variable头文件有两个variable类，一个是condition_variable，另一个是condition_variable_any。**condition_variable必须结合unique_lock使用。condition_variable_any可以使用任何的锁。**
 
-    * condition_variable条件变量**可以阻塞（wait、wait_for、wait_until）调用的线程直到使用（notify_one或notify_all）通知恢复为止。**condition_variable是一个类，这个类既有构造函数也有析构函数，使用时需要构造对应的condition_variable对象，调用对象相应的函数来实现上面的功能。
+    * condition_variable条件变量**可以阻塞（wait、wait_for、wait_until）调用的线程直到使用（notify_one或notify_all）通知恢复为止。** condition_variable是一个类，这个类既有构造函数也有析构函数，使用时需要构造对应的condition_variable对象，调用对象相应的函数来实现上面的功能。
 
       | 类型               | 说明                                         |
       | ------------------ | -------------------------------------------- |
@@ -3669,15 +3868,81 @@ const string s = "Inception";
 ### 互斥锁的底层原理
 
 * 锁实质是一块被多个线程共享的内存空间，需要保证多个线程对这块内存空间的修改是原子且互斥的，就需要提供某种特殊的指令来保证。
-* CPU提供了原子的CAS（Compare and Swap）操作来对这块内存空间进行操作，这些原子操作由多个机器指令组成，通过**多个指令能实现应用层所提供的原子操作即lockfree**【包含spinlock，不存在context switch】
+```c++
+enum MutexState { UNLOCKED = 0, LOCKED = 1 };
+std::atomic<int> lock_state;
+```
+* CPU提供了原子的CAS（Compare and Swap）操作来对这块内存空间进行操作，这些原子操作由多个机器指令组成，通过**多个指令能实现应用层所提供的原子操作即lockfree**【包含spinlock，不存在线程context switch】
+```c++
+bool CAS(T* addr, T expected, T desired) {
+    if (*addr == expected) {
+        *addr = desired;
+        return true;
+    } else {
+        return false;
+    }
+}
+```
   * lockfree相比mutex的优点：
     * 临界区很小的时候，换成lockfree性能通常会提高很多。
+      * 没有上下文切换，没有 syscall，全程运行在用户态+寄存器级
     * 使用lockfree可以避免死锁/活锁
+      * 因为它不持有任何锁状态，不会被线程永久占用
   * 缺点：
     * 因为ABA problem、memory order等问题，使得lockfree比mutex难实现得多。
   * 除非性能瓶颈已经确定，否则还是乖乖用mutex+condvar，等到以后出bug了就知道mutex的好了。如果一定要换lockfree，请一定要先profile，profile，profile！请确保时间花在刀刃上
 * 为了避免spinlock**引起的CPU资源空耗**，加入了block wait【存在context switch】，即形成了Mutex【互斥锁】
-  * 先spin，拿不到锁再block wait，还是直接block wait，这是具体实现的问题
+  * 先spin，拿不到锁再block(挂起) wait，还是直接block wait，这是具体实现的问题
+* ABA problem
+  * 现象：变量经历了变化，但最终“看起来”没有变 → CAS 误以为一切正常
+  * ```c++
+      struct Node {
+      int value;
+      Node* next;
+      };
+
+      std::atomic<Node*> top;
+      线程 A: 读取了 top = node_A
+
+      线程 B: pop 掉 node_A，free 掉，然后新建了另一个 node_A（可能地址一样），push 回去
+
+      线程 A: CAS 成功 → 此时 top == node_A，但已经不是“原来的那个 node_A”了！
+    ```
+  * 解决：指针 + 版本号（tag） → 引入 std::atomic<std::pair<T*, int>> 来避免纯值比较
+* 为什么要考虑 内存顺序（memory_order）
+  * 现代 CPU 和编译器都会做指令重排序，你写的代码顺序 ≠ 实际执行顺序（为了优化）
+  * ```c++
+      std::atomic<bool> ready = false;
+      int data = 0;
+
+      // 线程 A:
+      data = 42;
+      ready.store(true);  // 如果被重排序，data 可能还没写完就 ready 了！
+
+      // 线程 B:
+      if (ready.load()) {
+          assert(data == 42);  // 有可能失败！因为 data 还没写入！
+      }
+    ```
+
+  * 解决：使用 std::memory_order：
+    内存顺序	保证
+    memory_order_relaxed	只保证原子性，无顺序保证
+    memory_order_release	保证“写入前面的操作都先执行”
+    memory_order_acquire	保证“读取后面的操作都在其之后”
+    memory_order_acq_rel	双向屏障
+    memory_order_seq_cst	所有线程中看起来操作是顺序的
+  
+  ```c++
+      // 线程 A:
+    data = 42;
+    ready.store(true, std::memory_order_release);
+
+    // 线程 B:
+    if (ready.load(std::memory_order_acquire)) {
+        assert(data == 42);  // ✅ 一定成立
+    }
+  ```
 
 ### C++中保证线程安全的方式
 
@@ -3739,7 +4004,8 @@ const string s = "Inception";
 
   * C++为了兼容C，保证程序在使用了std::printf和std::cout的时候不发生混乱，将**输出流**绑到了一起。**如果未关闭同步，C++的流本身并没有缓冲，每个C++流的操作都是直接与C的流缓冲进行交互**。**如果关闭了同步，则每个C++流操作都有自己的缓冲区，这在某些情况下会极大地加速流操作，但是就不是线程安全的了，且此时不能与C的IO函数混用**。【iostream在编译的时候，数据类型就确定了，数据和文本的转换很直接。而scanf/printf这些，%d%f这些都是要运行期动态判断的。】
   * std::cin与std::cout也有绑定，导致**每次std::cout执行后并在执行std::cin时都会刷新输出缓冲区**，也就是说**每次使用std::cin进行数据输入时，都会调用一次std::cout.flush()函数**，对缓冲区进行刷新。解除同步能够进一步加快IO速度：std::cin.tie()。
-  
+* std::istream（以及其派生类如 std::istringstream）​​重载了 operator bool() 或 operator void*()​​（取决于 C++ 版本），使得流对象可以 ​​隐式转换为布尔值​​，用于判断流的状态
+* std::istringstream 的 >> 运算符（流提取运算符）在读取数据时，​​默认会跳过所有空白字符​​（包括空格 ' '、制表符 '\t'、换行符 '\n' 等），但 ​​不会跳过其他非空白字符​​（如 ,、#、数字等）。>> 会读取连续的非空白字符​​，直到遇到空白字符或流结束。
 * 格式化输出函数：
 
   * 
@@ -3890,7 +4156,10 @@ const string s = "Inception";
   * 在浮点数计算中，**由于浮点数的有限精度表示**，可能会导致**数学等式中的两边在计算机中的表示略有不同。**浮点数的**精度问题导致的舍入误差。**
 
 ## Linux系统编程
-
+* Linux top 命令的buff和cache
+  * Buffer（缓冲区）​：Buffer 是内核用于临时存储原始磁盘块数据的内存区域，主要目的是缓和磁盘写入操作的效率。
+  * Cache（缓存区）​：Cache 是内核用于缓存从磁盘读取的文件数据的内存区域，目的是加速后续读取操作。
+  ![alt text](image-6.png)
 * Linux基本指令【文件系统、shell脚本】
 
 * 开发工具
@@ -4721,7 +4990,7 @@ const string s = "Inception";
         * 条件变量和互斥锁配合的原因：
   
           * 条件变量用于**某个线程需要在某种条件成立时才去保护它将要操作的临界区**，这种情况从而**避免了线程不断轮询检查该条件是否成立而降低效率**的情况，这是实现了效率提高。。。在条件满足时【唤醒操作】，**自动退出阻塞，再加锁进行操作。**
-  
+  ```
   * 网络编程
   
     * 五大IO模型：同步|异步、阻塞、非阻塞、IO复用、信号驱动
@@ -4947,6 +5216,7 @@ const string s = "Inception";
 * **收发数据**：使用`send()`和`recv()`系统调用**发送和接收数据**。对于UDP Socket，可以使用`sendto()`和`recvfrom()`。
 * **关闭Socket**：使用`close()`系统调用关闭Socket。
 
+* todo 0626
 
 
 ## Mysql
